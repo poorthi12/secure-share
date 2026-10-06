@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block title %}Security settings{% endblock %}
+{% block content %}
+<section class="page-heading">
+  <div>
+    <span class="eyebrow">KEEP YOUR ACCOUNT SAFE</span>
+    <h1>Security</h1>
+    <p>Use a strong password and review the protections on your files.</p>
+  </div>
+  <form method="post" action="/logout" style="margin:0;">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+    <button class="button button-secondary" type="submit" title="Sign out of SecureShare">
+      <span aria-hidden="true">⎋</span> Log out
+    </button>
+  </form>
+</section>
+
+<div class="settings-layout">
+  <section class="panel security-settings-panel">
+    <div class="panel-heading">
+      <div><span class="eyebrow">ACCOUNT ACCESS</span><h2>Change password</h2></div>
+      <span class="secure-pill">◇ Argon2 protected</span>
+    </div>
+    <form method="post" action="/settings/security/password" class="stack-form security-form">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <label>Current password<input type="password" name="current_password" autocomplete="current-password" required></label>
+      <div class="form-row">
+        <label>New password<input type="password" name="password" minlength="10" autocomplete="new-password" required><small class="field-hint">At least 10 characters, a letter and a number.</small></label>
+        <label>Confirm new password<input type="password" name="confirm_password" minlength="10" autocomplete="new-password" required></label>
+      </div>
+      <button class="button button-primary" type="submit">Update password</button>
+    </form>
+    <div class="settings-divider"></div>
+    <div class="security-check-row"><span class="security-check">✓</span><div><b>Verified email address</b><small>{{ profile_user.email }}</small></div><span class="status-badge status-active">VERIFIED</span></div>
+    <div class="security-check-row"><span class="security-check">✓</span><div><b>Encrypted file storage</b><small>Files use AES-256-GCM authenticated encryption.</small></div><span class="status-badge status-active">ACTIVE</span></div>
+    <div class="security-logout-card">
+      <div>
+        <b>Active session</b>
+        <small>Sign out of this browser when you are done studying or using a shared computer.</small>
+      </div>
+      <form method="post" action="/logout" style="margin:0;">
+        <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+        <button class="button button-danger button-small" type="submit">Sign out</button>
+      </form>
+    </div>
+  </section>
+
+  <aside class="settings-nav panel">
+    <span class="eyebrow">ACCOUNT SETTINGS</span>
+    <a class="settings-nav-item" href="/profile"><span>◎</span><span><b>Profile</b><small>Your account details</small></span>›</a>
+    <a class="settings-nav-item active" href="/settings/security"><span>◇</span><span><b>Security</b><small>Password and sessions</small></span>›</a>
+    <a class="settings-nav-item" href="/settings/notifications"><span>♧</span><span><b>Notifications</b><small>What updates reach you</small></span>›</a>
+    <div class="settings-nav-divider"></div>
+    <form method="post" action="/logout" class="settings-nav-logout-form">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <button class="settings-nav-item settings-nav-logout" type="submit">
+        <span>⎋</span>
+        <span><b>Log out</b><small>End current session</small></span>
+        <span aria-hidden="true">→</span>
+      </button>
+    </form>
+  </aside>
+</div>
+{% endblock %}

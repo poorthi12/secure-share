@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block title %}{{ group.name }}{% endblock %}
+{% block content %}
+<a href="/groups" class="back-link back-inline">← All groups</a>
+<section class="group-hero">
+  <span class="group-avatar group-avatar-large">{{ group.name[:1]|upper }}</span>
+  <div><span class="eyebrow">CLASS WORKSPACE · {{ role|upper }}</span><h1>{{ group.name }}</h1><p>{{ group.description or 'Files and resources shared with your group.' }}</p></div>
+  <div class="group-hero-actions"><a class="button button-secondary" href="/groups/{{ group.id }}/files">▤ Browse files</a>{% if can_manage %}<a class="button button-primary" href="/files/upload?group_id={{ group.id }}">＋ Add a file</a>{% endif %}</div>
+</section>
+<div class="group-detail-grid">
+  <section class="panel group-members-panel">
+    <div class="panel-heading"><div><span class="eyebrow">YOUR CLASSMATES</span><h2>Members <span class="count-pill">{{ members|length }}</span></h2></div></div>
+    {% for member in members %}
+    <div class="member-row">
+      <span class="avatar">{{ member.user.name[:1]|upper }}</span>
+      <span class="member-copy"><b>{{ member.user.name }}</b><small>{{ member.user.email }}</small></span>
+      <span class="role-pill role-{{ member.role }}">{{ member.role }}</span>
+      {% if role == 'owner' and member.role != 'owner' %}
+      <form method="post" action="/groups/{{ group.id }}/members/{{ member.user.id }}/role" class="member-role-form">
+        <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+        <label class="sr-only" for="role-{{ member.user.id }}">Role for {{ member.user.name }}</label>
+        <select id="role-{{ member.user.id }}" name="role" data-submit-change><option value="member" {% if member.role == 'member' %}selected{% endif %}>Member</option><option value="admin" {% if member.role == 'admin' %}selected{% endif %}>Admin</option></select>
+      </form>
+      {% endif %}
+      {% if can_manage and member.role != 'owner' %}
+      <form method="post" action="/groups/{{ group.id }}/members/{{ member.user.id }}/permissions" class="member-permission">
+        <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+        <label class="switch-label"><input type="checkbox" name="can_upload" {% if member.can_upload or member.role == 'admin' %}checked{% endif %} {% if member.role == 'admin' %}disabled{% endif %} data-submit-change><span>Can upload</span></label>
+      </form>
+      <form method="post" action="/groups/{{ group.id }}/members/{{ member.user.id }}/remove" data-confirm="Remove {{ member.user.name }} from this group?"><input type="hidden" name="_csrf" value="{{ csrf_token }}"><button class="icon-button small-icon danger-text" aria-label="Remove {{ member.user.name }}" type="submit">×</button></form>
+      {% endif %}
+    </div>
+    {% endfor %}
+    {% if can_manage %}
+    <form method="post" action="/groups/{{ group.id }}/members" class="invite-form">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <label class="sr-only" for="invite-email">Student email</label><input id="invite-email" type="email" name="email" placeholder="Add a classmate by email" required>
+      <label class="switch-label"><input type="checkbox" name="can_upload"><span>Allow upload</span></label>
+      <button class="button button-secondary button-small" type="submit">Add member</button>
+    </form>
+    {% endif %}
+  </section>
+  <section class="panel group-recent-panel">
+    <div class="panel-heading"><div><span class="eyebrow">LATEST CONTRIBUTIONS</span><h2>Group files</h2></div><a class="text-link" href="/groups/{{ group.id }}/files">View all →</a></div>
+    {% if files %}<div class="file-list">{% for file in files %}{% include 'components/file_card.html' %}{% endfor %}</div>
+    {% else %}<div class="empty-state compact"><span class="empty-illustration">▤</span><h3>No group files yet</h3><p>Upload resources to start building the shared library.</p>{% if can_manage %}<a class="button button-primary button-small" href="/files/upload?group_id={{ group.id }}">Upload to group</a>{% endif %}</div>{% endif %}
+  </section>
+</div>
+{% if role == 'owner' %}<section class="danger-zone panel"><div><h2>Delete this group</h2><p>Group access and shares end. Member-owned files remain in their personal spaces.</p></div><form method="post" action="/groups/{{ group.id }}/delete" data-confirm="Delete {{ group.name }} and revoke group shares?"><input type="hidden" name="_csrf" value="{{ csrf_token }}"><button class="button button-danger" type="submit">Delete group</button></form></section>{% endif %}
+{% endblock %}

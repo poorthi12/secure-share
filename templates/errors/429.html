@@ -1,0 +1,2 @@
+{% extends 'base.html' %}{% block title %}Slow down{% endblock %}
+{% block content %}<section class="error-page"><div class="error-illustration">429</div><span class="eyebrow">TEMPORARY RATE LIMIT</span><h1>Take a short pause</h1><p>{{ message|default('Too many requests. Please wait a moment and try again.') }}</p><a class="button button-primary" href="{% if current_user %}/dashboard{% else %}/{% endif %}">Return to SecureShare →</a></section>{% endblock %}

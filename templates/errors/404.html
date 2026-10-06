@@ -1,0 +1,2 @@
+{% extends 'base.html' %}{% block title %}Not found{% endblock %}
+{% block content %}<section class="error-page"><div class="error-illustration">404</div><span class="eyebrow">NOT FOUND</span><h1>This page isn't here</h1><p>{{ message|default('The link may have expired, been revoked or moved.') }}</p><a class="button button-primary" href="{% if current_user %}/dashboard{% else %}/{% endif %}">Go back →</a></section>{% endblock %}

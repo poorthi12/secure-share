@@ -1,0 +1,21 @@
+<header class="topbar">
+  <button class="icon-button mobile-menu" type="button" aria-label="Open navigation" aria-controls="app-sidebar" aria-expanded="false" data-sidebar-toggle>☰</button>
+  <form class="global-search" action="/search" method="get" role="search"><span aria-hidden="true">⌕</span><input name="q" value="{{ request.query_params.get('q','') if request.url.path == '/search' else '' }}" placeholder="Search files, groups…" aria-label="Search SecureShare" minlength="2"><kbd>⌘ K</kbd></form>
+  <div class="topbar-actions">
+    <details class="top-action-popover">
+      <summary class="icon-button" aria-label="Notifications">♧{% if unread_count|default(0) %}<i class="notification-dot"></i>{% endif %}</summary>
+      <div class="popover-panel"><div class="popover-heading"><strong>Notifications</strong>{% if unread_count %}<span class="count-pill">{{ unread_count }} new</span>{% endif %}</div>
+        {% if notification_preview %}{% for item in notification_preview %}<a class="popover-notification {% if not item.read_at %}unread{% endif %}" href="{{ item.target_url or '/notifications' }}"><b>{{ item.title }}</b><small>{{ item.message }}</small></a>{% endfor %}{% else %}<p>You're all caught up.</p>{% endif %}
+        <a class="text-link" href="/notifications">View all notifications →</a>
+      </div>
+    </details>
+    <form action="/settings/theme" method="post" class="theme-control"><input type="hidden" name="_csrf" value="{{ csrf_token }}"><label class="sr-only" for="theme-choice">Color theme</label><select id="theme-choice" name="theme" aria-label="Color theme" data-submit-change><option value="system" {% if theme == 'system' %}selected{% endif %}>◐ System</option><option value="light" {% if theme == 'light' %}selected{% endif %}>☼ Light</option><option value="dark" {% if theme == 'dark' %}selected{% endif %}>☾ Dark</option></select></form>
+    <div class="top-profile-wrap">
+      <a class="top-profile" href="/profile" aria-label="Your profile"><span class="avatar avatar-small">{{ current_user.name[:1]|upper }}</span><span class="top-profile-name">{{ current_user.name }}</span></a>
+      <form action="/logout" method="post" class="topbar-logout-form">
+        <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+        <button class="icon-button topbar-logout-button" type="submit" title="Log out" aria-label="Log out">⎋</button>
+      </form>
+    </div>
+  </div>
+</header>

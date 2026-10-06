@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block title %}{% if group %}Upload to {{ group.name }}{% else %}Upload a file{% endif %}{% endblock %}
+
+{% block content %}
+<section class="page-heading">
+  <div>
+    <span class="eyebrow">{% if group %}GROUP LIBRARY{% else %}YOUR PRIVATE SPACE{% endif %}</span>
+    <h1>{% if group %}Upload to {{ group.name }}{% else %}Upload a file{% endif %}</h1>
+    <p>{% if group %}This file will be visible to all members of {{ group.name }} after upload.{% else %}This file stays private to your account until you share it.{% endif %}</p>
+  </div>
+  {% if group %}<a class="button button-secondary" href="/files/upload">Upload privately instead</a>{% endif %}
+</section>
+
+<div class="upload-layout">
+  <section class="panel upload-panel">
+    <form method="post" action="/files/upload" enctype="multipart/form-data" data-upload-form>
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <input type="hidden" name="group_id" value="{{ group_id }}">
+      <label class="drop-zone" for="upload-input" data-drop-zone>
+        <input id="upload-input" type="file" name="upload" required data-file-input>
+        <span class="drop-icon" aria-hidden="true">&#x2191;</span>
+        <strong>Drop a file here, or <em>browse</em></strong>
+        <small data-file-name>Choose one file to upload &middot; up to 100 MB</small>
+      </label>
+      <div class="upload-progress" data-upload-progress hidden>
+        <div><span data-progress-label>Preparing upload...</span><b data-progress-value>0%</b></div>
+        <div class="meter"><i data-progress-bar></i></div>
+      </div>
+      <div class="upload-security">
+        <span aria-hidden="true">&#x25C7;</span>
+        <div><b>Protected from the start</b><small>A unique nonce and authenticated AES-GCM encryption protect every file.</small></div>
+      </div>
+      <button class="button button-primary button-full" type="submit" data-submit-button>Encrypt &amp; upload <span class="button-arrow" aria-hidden="true">&#x2192;</span></button>
+    </form>
+  </section>
+  <aside class="upload-aside">
+    <div class="upload-tip">
+      <span class="tip-icon" aria-hidden="true">&#x2726;</span>
+      <h3>Stay organized</h3>
+      <p>Use a clear filename so people can recognize the file.</p>
+    </div>
+    <div class="upload-tip">
+      <span class="tip-icon tip-purple" aria-hidden="true">&#x1F512;</span>
+      <h3>{% if group %}Shared with this group{% else %}Private by default{% endif %}</h3>
+      <p>{% if group %}All members of {{ group.name }} can access and download this file. Upload privately if it should stay in your account.{% else %}Only your account can access this file unless you share it with a student, group, or secure link.{% endif %}</p>
+    </div>
+  </aside>
+</div>
+{% endblock %}

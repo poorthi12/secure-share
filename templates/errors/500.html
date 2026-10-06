@@ -1,0 +1,2 @@
+{% extends 'base.html' %}{% block title %}Something went wrong{% endblock %}
+{% block content %}<section class="error-page"><div class="error-illustration error-mark">!</div><span class="eyebrow">TEMPORARY ISSUE</span><h1>We hit a snag</h1><p>{{ message|default('Something went wrong. Please try again in a moment.') }}</p><a class="button button-primary" href="{% if current_user %}/dashboard{% else %}/{% endif %}">Return to safety →</a></section>{% endblock %}

@@ -1,0 +1,38 @@
+<div class="sidebar-backdrop" data-sidebar-close></div>
+<aside class="sidebar" id="app-sidebar" aria-label="Main navigation">
+  <a class="brand" href="/dashboard" aria-label="SecureShare dashboard">
+    <span class="brand-mark"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M9 14V10a7 7 0 0 1 14 0v4M7 14h18v13H7z"/><path d="M16 19v3"/></svg></span>
+    <span class="brand-copy"><strong>secure<span>share</span></strong><small>STUDENT WORKSPACE</small></span>
+  </a>
+  <div class="side-label">WORKSPACE</div>
+  <nav class="side-nav">
+    <a class="nav-item {% if request.url.path == '/dashboard' %}active{% endif %}" href="/dashboard"><span class="nav-icon">⌂</span><span>Dashboard</span></a>
+    <a class="nav-item {% if request.url.path.startswith('/my-files') or request.url.path.startswith('/files') %}active{% endif %}" href="/my-files"><span class="nav-icon">▤</span><span>My files</span></a>
+    <a class="nav-item {% if request.url.path == '/sharing/shared-with-me' %}active{% endif %}" href="/sharing/shared-with-me"><span class="nav-icon">⇩</span><span>Shared with me</span></a>
+    <a class="nav-item {% if request.url.path == '/sharing/shared-by-me' %}active{% endif %}" href="/sharing/shared-by-me"><span class="nav-icon">⇧</span><span>Shared by me</span></a>
+    <a class="nav-item {% if request.url.path.startswith('/groups') %}active{% endif %}" href="/groups"><span class="nav-icon">◉</span><span>Groups</span></a>
+    <a class="nav-item {% if request.url.path.startswith('/notifications') %}active{% endif %}" href="/notifications"><span class="nav-icon">♧</span><span>Notifications</span>{% if unread_count|default(0) %}<span class="nav-badge">{{ unread_count }}</span>{% endif %}</a>
+  </nav>
+  <div class="side-label side-label-spaced">YOUR SPACE</div>
+  <nav class="side-nav">
+    <a class="nav-item {% if request.url.path.startswith('/activity') %}active{% endif %}" href="/activity"><span class="nav-icon">◷</span><span>Activity</span></a>
+    <a class="nav-item {% if request.url.path.startswith('/storage') %}active{% endif %}" href="/storage"><span class="nav-icon">▱</span><span>Storage</span></a>
+  </nav>
+  {% if current_user.role == 'admin' %}
+  <div class="side-label side-label-spaced">ADMINISTRATION</div>
+  <nav class="side-nav">
+    <a class="nav-item {% if request.url.path.startswith('/admin') %}active{% endif %}" href="/admin"><span class="nav-icon">⌘</span><span>Admin console</span></a>
+  </nav>
+  {% endif %}
+  <div class="sidebar-bottom">
+    <a class="nav-item {% if request.url.path.startswith('/settings') %}active{% endif %}" href="/settings"><span class="nav-icon">⚙</span><span>Settings</span></a>
+    <div class="sidebar-storage"><div class="storage-line"><span>Personal storage</span><a href="/storage">Manage</a></div><div class="meter"><i style="width:{{ ([100, (current_user.storage_used|default(0) * 100 / 2147483648)|int]|min) }}%"></i></div><small>Encrypted files, always in your control</small></div>
+    <div class="account-card-wrap">
+      <a class="account-card" href="/profile"><span class="avatar">{{ current_user.name[:1]|upper }}</span><span class="account-copy"><strong>{{ current_user.name }}</strong><small>{{ current_user.email }}</small></span></a>
+      <form action="/logout" method="post" class="sidebar-logout-form">
+        <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+        <button class="sidebar-logout-button" type="submit" title="Log out" aria-label="Log out">⎋</button>
+      </form>
+    </div>
+  </div>
+</aside>

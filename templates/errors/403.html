@@ -1,0 +1,2 @@
+{% extends 'base.html' %}{% block title %}Access denied{% endblock %}
+{% block content %}<section class="error-page"><div class="error-illustration">403</div><span class="eyebrow">ACCESS CONTROL</span><h1>You don't have access</h1><p>{{ message|default('This space is private, and your account does not have permission to view it.') }}</p><a class="button button-primary" href="/dashboard">Return to dashboard →</a></section>{% endblock %}

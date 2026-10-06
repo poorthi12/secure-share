@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% block title %}Shared by me{% endblock %}
+
+{% block content %}
+<section class="page-heading">
+  <div>
+    <span class="eyebrow">ACCESS YOU MANAGE</span>
+    <h1>Shared by me</h1>
+    <p>Review active shares, limits and access history.</p>
+  </div>
+  <a class="button button-primary" href="/sharing/create">&#x2197; Share a file</a>
+</section>
+
+{% if new_share_link %}
+<section class="new-link-callout">
+  <span class="callout-check" aria-hidden="true">&#x2713;</span>
+  <div>
+    <b>Your secure link is ready</b>
+    <p>Copy and share this link now. We will not show it again.</p>
+    <div class="copy-link-row">
+      <input readonly value="{{ new_share_link }}" aria-label="New secure link" data-copy-source>
+      <button class="button button-primary button-small" type="button" data-copy>Copy link</button>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<section class="panel list-panel">
+  <div class="panel-heading">
+    <h2>All shares</h2>
+    <span class="count-pill">{{ entries|length }}</span>
+  </div>
+  {% if entries %}
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead><tr><th>File</th><th>Shared with</th><th>Created</th><th>Expires</th><th>Downloads</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+        {% for entry in entries %}
+        <tr>
+          <td><a href="/files/{{ entry.file.id if entry.file else entry.share.file_id }}"><b>{{ entry.file.filename if entry.file else 'Deleted file' }}</b></a></td>
+          <td>{% if entry.recipient %}{{ entry.recipient.email }}{% elif entry.group %}<span class="group-label">&#x25C9; {{ entry.group.name }}</span>{% elif entry.share.is_link %}<span class="secure-pill">&#x25C7; Secure link</span>{% else %}—{% endif %}</td>
+          <td>{{ entry.share.created_at.strftime('%b %d, %Y') if entry.share.created_at else '—' }}</td>
+          <td>{% if entry.share.expires_at %}{{ entry.share.expires_at.strftime('%b %d, %Y') }}{% else %}Never{% endif %}</td>
+          <td>{{ entry.share.download_count }}{% if entry.share.download_limit %} / {{ entry.share.download_limit }}{% else %} / ∞{% endif %}</td>
+          <td>{% if entry.share.revoked_at %}<span class="status-badge status-revoked">Revoked</span>{% elif entry.share.expires_at and entry.share.expires_at < now %}<span class="status-badge status-expired">Expired</span>{% else %}<span class="status-badge status-active">Active</span>{% endif %}</td>
+          <td>{% if not entry.share.revoked_at %}<form method="post" action="/shares/{{ entry.share.id }}/revoke" data-confirm="Revoke access to this file now?"><input type="hidden" name="_csrf" value="{{ csrf_token }}"><button class="text-button danger-text" type="submit">Revoke</button></form>{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <span class="empty-illustration" aria-hidden="true">&#x2197;</span>
+    <h3>No shares yet</h3>
+    <p>Share a file with a classmate, group or secure link.</p>
+    <a class="button button-primary button-small" href="/sharing/create">Create your first share &#x2192;</a>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

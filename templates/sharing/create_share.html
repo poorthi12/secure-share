@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% block title %}Share a file{% endblock %}
+
+{% block content %}
+<section class="page-heading">
+  <div>
+    <span class="eyebrow">SHARE WITH CONFIDENCE</span>
+    <h1>Create a secure share</h1>
+    <p>Choose who can access your file and how long access should last.</p>
+  </div>
+</section>
+
+{% if not files %}
+<div class="share-empty-notice">
+  <div><b>Upload a file before creating a share.</b><small>Your files will appear in the file selector here.</small></div>
+  <a class="button button-primary button-small" href="/files/upload">Upload a file</a>
+</div>
+{% endif %}
+
+<div class="share-layout">
+  <section class="panel share-form-panel">
+    <form method="post" action="/shares" class="stack-form" data-loading-form>
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <label>Choose a file
+        <select name="file_id" required {% if not files %}disabled{% endif %}>
+          <option value="">Select a file</option>
+          {% for file in files %}
+          <option value="{{ file.id }}" {% if selected_file and selected_file.id == file.id %}selected{% endif %}>{{ file.filename }}</option>
+          {% endfor %}
+        </select>
+      </label>
+
+      <div class="form-section-heading">
+        <span class="step-badge">01</span>
+        <div><b>Who should have access?</b><small>Choose one destination. You can select a student, a group, or create a link.</small></div>
+      </div>
+      <div class="share-mode-grid" role="radiogroup" aria-label="Share destination">
+        <label class="share-mode-option">
+          <input type="radio" name="share_type" value="student" {% if students %}checked{% else %}disabled{% endif %} required>
+          <span><b>Student</b><small>Share with one member</small></span>
+        </label>
+        <label class="share-mode-option">
+          <input type="radio" name="share_type" value="group" {% if not students and groups %}checked{% endif %} {% if not groups %}disabled{% endif %} required>
+          <span><b>Group</b><small>Share with a class group</small></span>
+        </label>
+        <label class="share-mode-option">
+          <input type="radio" name="share_type" value="link" {% if not students and not groups %}checked{% endif %} required>
+          <span><b>Secure link</b><small>Create a copyable link</small></span>
+        </label>
+      </div>
+
+      <div class="share-mode-fields" data-share-fields="student">
+        <label>Select a student
+          <select name="recipient_id" data-share-required>
+            <option value="">Choose a student</option>
+            {% for student in students %}<option value="{{ student.id }}">{{ student.name }} | {{ student.email }}</option>{% endfor %}
+          </select>
+          {% if not students %}<small class="field-hint">No other verified students are available yet.</small>{% endif %}
+        </label>
+      </div>
+
+      <div class="share-mode-fields" data-share-fields="group">
+        <label>Select a group
+          <select name="group_id" data-share-required>
+            <option value="">Choose a group</option>
+            {% for group in groups %}<option value="{{ group.id }}">{{ group.name }}</option>{% endfor %}
+          </select>
+        </label>
+      </div>
+
+      <div class="share-mode-fields share-link-note" data-share-fields="link">
+        <b>Copy the link after you create it.</b>
+        <small>It will appear on the next page. Keep it private and share it only with the people you trust.</small>
+      </div>
+
+      <div class="form-section-heading">
+        <span class="step-badge">02</span>
+        <div><b>Set the guardrails</b><small>Access expires automatically and can be revoked at any time.</small></div>
+      </div>
+      <div class="form-row">
+        <label>Access expiry
+          <select name="expiry">
+            <option value="10m">10 minutes</option><option value="1h">1 hour</option><option value="1d" selected>1 day</option><option value="7d">7 days</option><option value="custom">Custom date</option><option value="never">No expiry</option>
+          </select>
+        </label>
+        <label>Download limit
+          <select name="download_limit">
+            <option value="unlimited">Unlimited</option><option value="1">1 download</option><option value="5">5 downloads</option><option value="10">10 downloads</option><option value="custom">Custom</option>
+          </select>
+        </label>
+      </div>
+      <label class="conditional-field" data-expiry-field hidden>Expires at<input type="datetime-local" name="expires_at"></label>
+      <label class="conditional-field" data-limit-field hidden>Custom download limit<input type="number" name="custom_limit" min="1" max="10000" placeholder="For example, 25"></label>
+      <div class="share-link-password" data-link-options>
+        <label>Link password <span class="optional-label">OPTIONAL</span>
+          <input type="password" name="link_password" minlength="8" placeholder="At least 8 characters">
+          <small class="field-hint">Password protection applies to secure links.</small>
+        </label>
+      </div>
+      <div class="share-encryption-note"><span aria-hidden="true">&#x25C7;</span><span><b>Encrypted at rest</b><small>The file remains encrypted; download checks happen before any content is served.</small></span></div>
+      <button class="button button-primary button-full" type="submit" {% if not files %}disabled aria-disabled="true"{% endif %}>Create secure share <span class="button-arrow" aria-hidden="true">&#x2192;</span></button>
+    </form>
+  </section>
+  <aside class="share-aside">
+    <div class="share-aside-card"><span class="feature-graphic graphic-violet" aria-hidden="true">&#x25C7;</span><h3>Access stays yours</h3><p>Revoke a share anytime. The recipient loses access immediately, including secure links.</p></div>
+    <div class="share-aside-card share-tip-card"><span class="tip-icon" aria-hidden="true">&#x25CE;</span><h3>A good rule of thumb</h3><p>Set the shortest expiry and download limit that fits your collaboration.</p></div>
+  </aside>
+</div>
+{% endblock %}
+
+{% block scripts %}<script src="/static/js/sharing.js" defer></script>{% endblock %}

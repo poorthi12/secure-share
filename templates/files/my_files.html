@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block title %}My files{% endblock %}
+{% block content %}
+<section class="page-heading"><div><span class="eyebrow">YOUR WORKSPACE</span><h1>My files</h1><p>Your personal library, protected and easy to find.</p></div><a class="button button-primary" href="/files/upload"><span class="button-plus">＋</span> Upload file</a></section>
+<section class="panel list-panel">
+  <div class="panel-heading list-toolbar">
+    <div><h2>All files <span class="count-pill">{{ files|length }}</span></h2><small>Only you can see files until you share them.</small></div>
+    <form method="get" action="/my-files" class="filter-form file-filter-form">
+      <label class="search-field"><span>⌕</span><input type="search" name="q" value="{{ q }}" placeholder="Find a file…" aria-label="Search your files"></label>
+      <select name="kind" aria-label="Filter by file type"><option value="">All types</option><option value="image" {% if kind == 'image' %}selected{% endif %}>Images</option><option value="application" {% if kind == 'application' %}selected{% endif %}>Documents</option><option value="text" {% if kind == 'text' %}selected{% endif %}>Text</option></select>
+      <select name="status" aria-label="Filter by status"><option value="">Any status</option><option value="shared" {% if status == 'shared' %}selected{% endif %}>Shared</option><option value="encrypted" {% if status == 'encrypted' %}selected{% endif %}>Encrypted</option><option value="downloaded" {% if status == 'downloaded' %}selected{% endif %}>Downloaded</option></select>
+      <label class="date-filter">From<input type="date" name="date_from" value="{{ date_from }}" aria-label="Uploaded after"></label>
+      <label class="date-filter">To<input type="date" name="date_to" value="{{ date_to }}" aria-label="Uploaded before"></label>
+      <select name="sort" aria-label="Sort files"><option value="newest" {% if sort == 'newest' %}selected{% endif %}>Newest</option><option value="oldest" {% if sort == 'oldest' %}selected{% endif %}>Oldest</option><option value="largest" {% if sort == 'largest' %}selected{% endif %}>Largest</option><option value="downloads" {% if sort == 'downloads' %}selected{% endif %}>Most downloaded</option></select>
+      <button class="button button-secondary button-small" type="submit">Apply filters</button>
+    </form>
+  </div>
+  {% if files %}<div class="file-list">{% for file in files %}{% include 'components/file_card.html' %}{% endfor %}</div>
+  {% else %}<div class="empty-state"><span class="empty-illustration">⌕</span><h3>No files found</h3><p>{% if q or kind or status %}Try changing your search or filters.{% else %}Upload notes, assignments and project resources to begin.{% endif %}</p><a class="button button-primary button-small" href="/files/upload">Upload a file →</a></div>{% endif %}
+</section>
+{% endblock %}

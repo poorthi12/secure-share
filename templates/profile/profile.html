@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block title %}Profile{% endblock %}
+{% block content %}
+<section class="page-heading">
+  <div>
+    <span class="eyebrow">YOUR ACCOUNT</span>
+    <h1>Profile</h1>
+    <p>Manage the details classmates see when they collaborate with you.</p>
+  </div>
+  <form method="post" action="/logout" style="margin:0;">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+    <button class="button button-secondary" type="submit" title="Sign out of SecureShare">
+      <span aria-hidden="true">⎋</span> Log out
+    </button>
+  </form>
+</section>
+
+<div class="settings-layout">
+  <section class="panel profile-card">
+    <div class="profile-cover">
+      <span class="profile-avatar">{{ profile_user.name[:1]|upper }}</span>
+      <div><b>{{ profile_user.name }}</b><small>SecureShare student</small></div>
+    </div>
+    <form method="post" action="/profile" class="stack-form profile-form">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <label>Full name<input name="name" value="{{ profile_user.name }}" maxlength="80" required></label>
+      <label>Email address<input value="{{ profile_user.email }}" readonly disabled><small class="field-hint">Email changes are not available in this workspace yet.</small></label>
+      <label>Avatar image URL <span class="optional-label">OPTIONAL</span><input type="url" name="avatar_url" value="{{ profile_user.avatar_url or '' }}" placeholder="https://example.com/photo.jpg"><small class="field-hint">Use an HTTPS image address. Leave blank for your initials.</small></label>
+      <div class="form-actions"><button class="button button-primary" type="submit">Save profile</button></div>
+    </form>
+    <div class="profile-logout-section">
+      <div class="profile-logout-info">
+        <span class="profile-logout-icon" aria-hidden="true">⎋</span>
+        <div>
+          <strong>Active session</strong>
+          <small>Signed in as {{ profile_user.email }}</small>
+        </div>
+      </div>
+      <form method="post" action="/logout" style="margin:0;">
+        <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+        <button class="button button-danger button-small" type="submit">Log out</button>
+      </form>
+    </div>
+  </section>
+
+  <aside class="settings-nav panel">
+    <span class="eyebrow">ACCOUNT SETTINGS</span>
+    <a class="settings-nav-item active" href="/profile"><span>◎</span><span><b>Profile</b><small>Your account details</small></span>›</a>
+    <a class="settings-nav-item" href="/settings/security"><span>◇</span><span><b>Security</b><small>Password and sessions</small></span>›</a>
+    <a class="settings-nav-item" href="/settings/notifications"><span>♧</span><span><b>Notifications</b><small>What updates reach you</small></span>›</a>
+    <div class="settings-nav-divider"></div>
+    <form method="post" action="/logout" class="settings-nav-logout-form">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <button class="settings-nav-item settings-nav-logout" type="submit">
+        <span>⎋</span>
+        <span><b>Log out</b><small>End current session</small></span>
+        <span aria-hidden="true">→</span>
+      </button>
+    </form>
+  </aside>
+</div>
+{% endblock %}

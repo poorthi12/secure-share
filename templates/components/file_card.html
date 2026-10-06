@@ -1,0 +1,21 @@
+<div class="file-row">
+  <a class="file-row-link" href="/files/{{ file.id }}">
+    <span class="file-type-icon {{ 'image' if file.content_type.startswith('image/') else 'pdf' if file.content_type == 'application/pdf' else 'generic' }}">
+      {% if file.content_type.startswith('image/') %}▧{% elif file.content_type == 'application/pdf' %}PDF{% else %}▤{% endif %}
+    </span>
+    <span class="file-main">
+      <strong>{{ file.filename }}</strong>
+      <small>{{ file.content_type.split('/')[-1]|upper }} · {{ file.size|filesizeformat }}{% if file.group_id %} · Group file{% endif %}</small>
+    </span>
+    <span class="secure-pill">◇ Encrypted</span>
+    <time>{{ file.created_at.strftime('%b %d') if file.created_at else '—' }}</time>
+    <span class="row-chevron" aria-hidden="true">›</span>
+  </a>
+  {% if current_user and file.owner_id == current_user.id %}
+    <form class="file-row-delete" method="post" action="/files/{{ file.id }}/delete"
+          data-confirm="Delete {{ file.filename }}? This permanently deletes the file and revokes its active shares.">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <button class="button button-danger button-small" type="submit" aria-label="Delete {{ file.filename }}">Delete</button>
+    </form>
+  {% endif %}
+</div>

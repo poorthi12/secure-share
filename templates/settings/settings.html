@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block title %}Settings{% endblock %}
+{% block content %}
+<section class="page-heading">
+  <div>
+    <span class="eyebrow">PREFERENCES</span>
+    <h1>Settings</h1>
+    <p>Make SecureShare work the way you do.</p>
+  </div>
+  <form method="post" action="/logout" style="margin:0;">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+    <button class="button button-secondary" type="submit" title="Sign out of SecureShare">
+      <span aria-hidden="true">⎋</span> Log out
+    </button>
+  </form>
+</section>
+<div class="settings-layout">
+  <section class="panel settings-main">
+    <div class="panel-heading"><div><span class="eyebrow">APPEARANCE</span><h2>Color theme</h2></div></div>
+    <p class="settings-description">Choose a comfortable look for your workspace. System follows your device preference.</p>
+    <form method="post" action="/settings/theme" class="theme-options"><input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      {% for value,label,icon in [('light','Light','☼'),('dark','Dark','☾'),('system','System','◐')] %}
+      <label class="theme-option {% if theme == value %}selected{% endif %}"><input type="radio" name="theme" value="{{ value }}" {% if theme == value %}checked{% endif %} data-submit-change><span>{{ icon }}</span><b>{{ label }}</b>{% if theme == value %}<i>✓</i>{% endif %}</label>
+      {% endfor %}
+    </form>
+    <div class="settings-divider"></div>
+    <div class="settings-row"><span class="settings-row-icon">◇</span><span><b>Default file protection</b><small>New files are encrypted automatically before storage.</small></span><span class="status-badge status-active">ON</span></div>
+    <div class="settings-row"><span class="settings-row-icon">⌁</span><span><b>Access confirmation</b><small>Secure link downloads are tracked for file owners.</small></span><span class="status-badge status-active">ON</span></div>
+  </section>
+  <aside class="settings-nav panel">
+    <span class="eyebrow">ACCOUNT SETTINGS</span>
+    <a class="settings-nav-item" href="/profile"><span>◎</span><span><b>Profile</b><small>Your account details</small></span>›</a>
+    <a class="settings-nav-item" href="/settings/security"><span>◇</span><span><b>Security</b><small>Password and sessions</small></span>›</a>
+    <a class="settings-nav-item" href="/settings/notifications"><span>♧</span><span><b>Notifications</b><small>What updates reach you</small></span>›</a>
+    <div class="settings-nav-divider"></div>
+    <form method="post" action="/logout" class="settings-nav-logout-form">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <button class="settings-nav-item settings-nav-logout" type="submit">
+        <span>⎋</span>
+        <span><b>Log out</b><small>End current session</small></span>
+        <span aria-hidden="true">→</span>
+      </button>
+    </form>
+  </aside>
+</div>
+{% endblock %}

@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block title %}Shared with me{% endblock %}
+
+{% block content %}
+<section class="page-heading">
+  <div>
+    <span class="eyebrow">COLLABORATION</span>
+    <h1>Shared with me</h1>
+    <p>Files classmates and groups have shared with you.</p>
+  </div>
+</section>
+
+<section class="panel list-panel">
+  <div class="panel-heading">
+    <h2>Available to you</h2>
+    <span class="count-pill">{{ entries|length }}</span>
+  </div>
+  {% if entries %}
+    {% for entry in entries %}
+      <div class="shared-file-row">
+        <span class="file-type-icon">▤</span>
+        <span class="file-main">
+          <strong>{{ entry.file.filename }}</strong>
+          <small>{{ entry.file.size|filesizeformat }} · Shared by {{ entry.sender.name if entry.sender else 'a classmate' }}</small>
+        </span>
+        <span class="expiry-pill">
+          {% if entry.share.expires_at %}Until {{ entry.share.expires_at.strftime('%b %d') }}{% else %}No expiry{% endif %}
+        </span>
+        <div class="shared-file-actions">
+          <a class="button button-secondary button-small" href="/files/{{ entry.file.id }}/download">↓ Download</a>
+          {% if entry.share.recipient_id == current_user.id %}
+            <form method="post" action="/shares/{{ entry.share.id }}/remove"
+                  data-confirm="Remove this file from your shared list? You will lose access, but the sender's original file will not be deleted.">
+              <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+              <button class="button button-danger button-small" type="submit">Remove</button>
+            </form>
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+  {% else %}
+    <div class="empty-state">
+      <span class="empty-illustration">⇩</span>
+      <h3>Nothing shared with you yet</h3>
+      <p>When someone shares a file or group folder, you'll find it here.</p>
+    </div>
+  {% endif %}
+</section>
+{% endblock %}
