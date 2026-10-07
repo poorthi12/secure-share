@@ -67,6 +67,30 @@ class Settings(BaseSettings):
     def cookie_secure(self) -> bool:
         return self.secure_cookies if self.secure_cookies is not None else self.is_production
 
+    def validate_deployment(self) -> None:
+        """Fail early with a clear message when production configuration is incomplete."""
+        if not self.is_production:
+            return
+        missing = []
+        if not self.mongodb_uri:
+            missing.append("MONGODB_URI")
+        if not (self.cloudinary_cloud_name and self.cloudinary_api_key and self.cloudinary_api_secret):
+            missing.extend(name for name, value in (
+                ("CLOUDINARY_CLOUD_NAME", self.cloudinary_cloud_name),
+                ("CLOUDINARY_API_KEY", self.cloudinary_api_key),
+                ("CLOUDINARY_API_SECRET", self.cloudinary_api_secret),
+            ) if not value)
+        if not self.smtp_host:
+            missing.append("SMTP_HOST")
+        if not (self.smtp_from_email or "@" in self.smtp_username):
+            missing.append("SMTP_FROM_EMAIL (or an email SMTP_USERNAME)")
+        for name, value in (("SESSION_SECRET", self.session_secret), ("JWT_SECRET", self.jwt_secret), ("ENCRYPTION_KEY", self.encryption_key)):
+            if not value:
+                missing.append(name)
+        if missing:
+            raise RuntimeError("Missing required production environment variables: " + ", ".join(missing))
+        self.encryption_secret()
+
     def session_signing_secret(self) -> str:
         if self.session_secret:
             return self.session_secret

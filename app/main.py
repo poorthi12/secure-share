@@ -70,7 +70,9 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="SecureShare", description="Secure student file sharing and collaboration", version="1.0.0", lifespan=lifespan)
 app.add_middleware(SecurityHeadersMiddleware)
-app.add_middleware(SessionMiddleware, secret_key=get_settings().session_signing_secret(), session_cookie="secureshare_session", max_age=60 * 60 * 12, same_site="lax", https_only=get_settings().cookie_secure)
+app_settings = get_settings()
+app_settings.validate_deployment()
+app.add_middleware(SessionMiddleware, secret_key=app_settings.session_signing_secret(), session_cookie="secureshare_session", max_age=60 * 60 * 12, same_site="lax", https_only=app_settings.cookie_secure)
 app.mount("/static", StaticFiles(directory=PROJECT_ROOT / "static"), name="static")
 
 for router in (auth.router, dashboard.router, files.router, file_requests.router, sharing.router, groups.router, notifications.router, activity.router, storage.router, profile.router, admin.router):
