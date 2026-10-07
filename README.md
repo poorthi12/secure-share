@@ -1,5 +1,9 @@
 # SecureShare
+
+
 Link to Access the page : secure-share-neon.vercel.app
+
+
 SecureShare is a student file-sharing and collaboration workspace built with FastAPI, Jinja2, MongoDB and Cloudinary. It supports verified student accounts, encrypted file uploads, private sharing, secure links, class groups, activity history, notifications and administrative oversight. There is no chat or messaging feature.
 
 ## Project walkthrough
