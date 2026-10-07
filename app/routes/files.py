@@ -106,13 +106,35 @@ async def upload_page(request: Request, group_id: str | None = None, user=Depend
 
 
 @router.post("/files/upload")
-async def upload_file(request: Request, upload: UploadFile = File(...), group_id: str | None = Form(None), user=Depends(require_user)):
-    try:
-        record = await _upload(request, user, upload, group_id or None)
-    except (ValueError, Forbidden) as exc:
-        flash(request, "error", str(exc))
-        return redirect(f"/files/upload?group_id={group_id}" if group_id else "/files/upload")
-    flash(request, "success", f"{record['filename']} was encrypted and uploaded.")
+async def upload_file(request: Request, uploads: list[UploadFile] = File(..., alias="upload"), group_id: str | None = Form(None), user=Depends(require_user)):
+    upload_page = f"/files/upload?group_id={group_id}" if group_id else "/files/upload"
+    if len(uploads) > 20:
+        flash(request, "error", "Upload up to 20 files at a time.")
+        return redirect(upload_page)
+
+    records = []
+    failures = []
+    for upload in uploads:
+        try:
+            records.append(await _upload(request, user, upload, group_id or None))
+        except (ValueError, Forbidden) as exc:
+            failures.append(f"{safe_filename(upload.filename or 'untitled')}: {exc}")
+        except Exception:
+            logger.exception("Batch upload failed for %s", safe_filename(upload.filename or "untitled"))
+            failures.append(f"{safe_filename(upload.filename or 'untitled')}: The upload failed. Please try again.")
+        finally:
+            await upload.close()
+
+    if records:
+        flash(request, "success", f"{len(records)} file{'s' if len(records) != 1 else ''} encrypted and uploaded.")
+    if failures:
+        shown = "; ".join(failures[:3])
+        remaining = len(failures) - 3
+        if remaining > 0:
+            shown += f"; and {remaining} more failed"
+        flash(request, "error", shown)
+    if not records:
+        return redirect(upload_page)
     return redirect(f"/groups/{group_id}/files" if group_id else "/my-files")
 
 

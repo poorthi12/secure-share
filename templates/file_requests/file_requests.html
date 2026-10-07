@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% block title %}File requests{% endblock %}
+{% block content %}
+<section class="page-heading">
+  <div>
+    <span class="eyebrow">ASK FOR A FILE</span>
+    <h1>File requests</h1>
+    <p>Request a file from another verified SecureShare account using a preset message.</p>
+  </div>
+</section>
+
+<section class="panel file-request-compose">
+  <div class="panel-heading">
+    <div><span class="eyebrow">NEW REQUEST</span><h2>Who has the file?</h2></div>
+  </div>
+  <form method="post" action="/file-requests" class="file-request-form">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+    <label>Choose an account
+      <select name="recipient_id" required {% if not accounts %}disabled{% endif %}>
+        <option value="">Select a verified account</option>
+        {% for account in accounts %}<option value="{{ account.id }}">{{ account.name }} · {{ account.email }}</option>{% endfor %}
+      </select>
+    </label>
+    <label>Choose a preset message
+      <select name="request_type" required>
+        <option value="">Select a request type</option>
+        <option value="send_file">Please send me the requested file.</option>
+        <option value="reminder">Reminder: please send me the file.</option>
+      </select>
+    </label>
+    <button class="button button-primary" type="submit" {% if not accounts %}disabled{% endif %}>Send request <span aria-hidden="true">&#8594;</span></button>
+    <p class="file-request-note">Only active, verified accounts can receive requests. Messages come from the preset list; there is no free-text chat.</p>
+  </form>
+  {% if not accounts %}<p class="file-request-note file-request-empty-note">No other verified accounts are available yet.</p>{% endif %}
+</section>
+
+<div class="file-request-columns">
+  <section class="panel file-request-list-panel">
+    <div class="panel-heading"><div><span class="eyebrow">NEEDS YOUR RESPONSE</span><h2>Received requests</h2></div><span class="count-pill">{{ incoming|length }}</span></div>
+    {% if incoming %}
+      <div class="file-request-list">
+        {% for item in incoming %}
+          <article class="file-request-card">
+            <div class="file-request-card-top">
+              <div><strong>{{ item.other.name if item.other else 'SecureShare member' }}</strong><small>{{ item.created_at.strftime('%b %d, %Y · %I:%M %p') if item.created_at else '' }}</small></div>
+              <span class="request-status status-{{ item.status }}">{{ item.status.replace('_', ' ') }}</span>
+            </div>
+            <p class="request-preset-message">{{ request_messages.get(item.request_type, 'Please send me the requested file.') }}</p>
+            {% if item.status == 'pending' %}
+              <p class="file-request-note">Share the file securely, then mark the request as sent.</p>
+              <div class="file-request-actions">
+                <a class="button button-secondary button-small" href="/sharing/create?recipient_id={{ item.requester_id }}">Share a file</a>
+                <form method="post" action="/file-requests/{{ item.id }}/status">
+                  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+                  <button class="button button-primary button-small" type="submit" name="status" value="fulfilled">Mark as sent</button>
+                </form>
+                <form method="post" action="/file-requests/{{ item.id }}/status">
+                  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+                  <button class="quiet-button" type="submit" name="status" value="declined">Decline</button>
+                </form>
+              </div>
+            {% endif %}
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state compact"><h3>No requests received</h3><p>Requests from other accounts will appear here.</p></div>
+    {% endif %}
+  </section>
+
+  <section class="panel file-request-list-panel">
+    <div class="panel-heading"><div><span class="eyebrow">YOUR REQUESTS</span><h2>Sent requests</h2></div><span class="count-pill">{{ outgoing|length }}</span></div>
+    {% if outgoing %}
+      <div class="file-request-list">
+        {% for item in outgoing %}
+          <article class="file-request-card">
+            <div class="file-request-card-top">
+              <div><strong>To {{ item.other.name if item.other else 'SecureShare member' }}</strong><small>{{ item.created_at.strftime('%b %d, %Y · %I:%M %p') if item.created_at else '' }}</small></div>
+              <span class="request-status status-{{ item.status }}">{{ item.status.replace('_', ' ') }}</span>
+            </div>
+            <p class="request-preset-message">{{ request_messages.get(item.request_type, 'Please send me the requested file.') }}</p>
+            {% if item.status == 'pending' %}
+              <form method="post" action="/file-requests/{{ item.id }}/cancel">
+                <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+                <button class="quiet-button" type="submit">Cancel request</button>
+              </form>
+            {% endif %}
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state compact"><h3>No requests sent</h3><p>Choose a verified account above to ask for a file.</p></div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

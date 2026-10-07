@@ -17,10 +17,10 @@
       <input type="hidden" name="_csrf" value="{{ csrf_token }}">
       <input type="hidden" name="group_id" value="{{ group_id }}">
       <label class="drop-zone" for="upload-input" data-drop-zone>
-        <input id="upload-input" type="file" name="upload" required data-file-input>
+        <input id="upload-input" type="file" name="upload" multiple required data-file-input>
         <span class="drop-icon" aria-hidden="true">&#x2191;</span>
-        <strong>Drop a file here, or <em>browse</em></strong>
-        <small data-file-name>Choose one file to upload &middot; up to 100 MB</small>
+        <strong data-file-prompt>Drop a file here, or <em>browse</em></strong>
+        <small data-file-name aria-live="polite">Choose up to 20 files &middot; 100 MB each</small>
       </label>
       <div class="upload-progress" data-upload-progress hidden>
         <div><span data-progress-label>Preparing upload...</span><b data-progress-value>0%</b></div>

@@ -4,8 +4,8 @@
   <div class="topbar-actions">
     <details class="top-action-popover">
       <summary class="icon-button" aria-label="Notifications">♧{% if unread_count|default(0) %}<i class="notification-dot"></i>{% endif %}</summary>
-      <div class="popover-panel"><div class="popover-heading"><strong>Notifications</strong>{% if unread_count %}<span class="count-pill">{{ unread_count }} new</span>{% endif %}</div>
-        {% if notification_preview %}{% for item in notification_preview %}<a class="popover-notification {% if not item.read_at %}unread{% endif %}" href="{{ item.target_url or '/notifications' }}"><b>{{ item.title }}</b><small>{{ item.message }}</small></a>{% endfor %}{% else %}<p>You're all caught up.</p>{% endif %}
+      <div class="popover-panel"><div class="popover-heading"><strong>Notifications</strong><span class="count-pill" data-notification-count {% if not unread_count %}hidden{% endif %}>{{ unread_count }} new</span></div>
+        <div data-notification-preview>{% if notification_preview %}{% for item in notification_preview %}<a class="popover-notification {% if not item.read_at %}unread{% endif %}" href="{{ item.target_url or '/notifications' }}" data-notification-id="{{ item.id }}"><b>{{ item.title }}</b><small>{{ item.message }}</small></a>{% endfor %}{% else %}<p>You're all caught up.</p>{% endif %}</div>
         <a class="text-link" href="/notifications">View all notifications →</a>
       </div>
     </details>

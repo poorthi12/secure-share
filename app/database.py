@@ -277,6 +277,7 @@ class MongoDatabase:
             "downloads": [("file_id", {}), ("user_id", {}), ("created_at", {})],
             "groups": [("members", {}), ("owner_id", {})],
             "notifications": [("user_id", {}), ("read_at", {})],
+            "file_requests": [("requester_id", {}), ("recipient_id", {}), ("status", {}), ("created_at", {})],
             "activity_logs": [("created_at", {}), ("user_id", {}), ("event", {})],
             "otp_records": [("email", {}), ("expires_at", {}), ([('email', 1), ('purpose', 1)], {"name": "one_active_otp_per_purpose", "unique": True, "partialFilterExpression": {"consumed_at": None}})],
         }

@@ -41,7 +41,9 @@ def test_upload_failure_compensates_external_blob(client, monkeypatch):
     monkeypatch.setattr(client.app.state.storage, "delete", track_delete)
     page = client.get("/files/upload")
     response = client.post("/files/upload", data={"_csrf": csrf(page), "group_id": ""}, files={"upload": ("saga.txt", b"temporary blob", "text/plain")}, follow_redirects=False)
-    assert response.status_code == 500
+    # Batch uploads report per-file failures and return to the upload page.
+    assert response.status_code == 303
+    assert response.headers["location"] == "/files/upload"
     assert deleted and deleted[0].startswith("local:")
     assert db.tables.get("files", []) == []
     assert db.tables["users"][0]["storage_used"] == 0

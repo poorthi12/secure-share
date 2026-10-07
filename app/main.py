@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
@@ -16,12 +17,13 @@ from app.database import make_database
 from app.integrations.cloudinary import BlobStorage
 from app.integrations.email import EmailService
 from app.middleware.security_middleware import SecurityHeadersMiddleware
-from app.routes import admin, auth, dashboard, files, groups, notifications, profile, sharing, storage, activity
+from app.routes import admin, auth, dashboard, files, file_requests, groups, notifications, profile, sharing, storage, activity
 from app.services.otp_service import OtpService
 from app.web import render
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
 logger = logging.getLogger("secureshare")
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 
 @asynccontextmanager
@@ -31,8 +33,9 @@ async def lifespan(app: FastAPI):
         raise RuntimeError("LOCAL_DEMO_MODE cannot be enabled in production")
     if settings.is_production and not (settings.cloudinary_cloud_name and settings.cloudinary_api_key and settings.cloudinary_api_secret):
         raise RuntimeError("Cloudinary credentials must be set in production")
-    if settings.is_production and not (settings.smtp_host and settings.smtp_from_email):
-        raise RuntimeError("SMTP_HOST and SMTP_FROM_EMAIL must be set in production")
+    has_smtp_sender = bool(settings.smtp_from_email or "@" in settings.smtp_username)
+    if settings.is_production and not (settings.smtp_host and has_smtp_sender):
+        raise RuntimeError("SMTP_HOST and SMTP_FROM_EMAIL (or an email SMTP_USERNAME) must be set in production")
     if not settings.local_demo_mode and not settings.mongodb_uri:
         raise RuntimeError("MONGODB_URI must be configured unless LOCAL_DEMO_MODE=true")
     app.state.settings = settings
@@ -68,9 +71,9 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="SecureShare", description="Secure student file sharing and collaboration", version="1.0.0", lifespan=lifespan)
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(SessionMiddleware, secret_key=get_settings().session_signing_secret(), session_cookie="secureshare_session", max_age=60 * 60 * 12, same_site="lax", https_only=get_settings().cookie_secure)
-app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/static", StaticFiles(directory=PROJECT_ROOT / "static"), name="static")
 
-for router in (auth.router, dashboard.router, files.router, sharing.router, groups.router, notifications.router, activity.router, storage.router, profile.router, admin.router):
+for router in (auth.router, dashboard.router, files.router, file_requests.router, sharing.router, groups.router, notifications.router, activity.router, storage.router, profile.router, admin.router):
     app.include_router(router)
 
 

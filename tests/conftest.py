@@ -10,7 +10,7 @@ from fastapi.testclient import TestClient
 
 # Tests are hermetic even when the developer's shell has production service credentials.
 for _name, _value in {
-    "APP_ENV": "development", "LOCAL_DEMO_MODE": "false", "MONGODB_URI": "", "CLOUDINARY_CLOUD_NAME": "",
+    "APP_ENV": "development", "LOCAL_DEMO_MODE": "true", "MONGODB_URI": "", "CLOUDINARY_CLOUD_NAME": "",
     "CLOUDINARY_API_KEY": "", "CLOUDINARY_API_SECRET": "", "SMTP_HOST": "",
     "SMTP_USERNAME": "", "SMTP_PASSWORD": "", "MAIL_SERVER": "", "SESSION_SECRET": "test-session-secret-for-local-tests",
     "JWT_SECRET": "test-token-secret-for-local-tests", "ENCRYPTION_KEY": "", "BASE_URL": "http://localhost:8000",

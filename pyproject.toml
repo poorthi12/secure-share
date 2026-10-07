@@ -30,5 +30,12 @@ dev = ["pytest>=8.4.0", "pytest-asyncio>=1.1.0"]
 asyncio_mode = "auto"
 testpaths = ["tests"]
 
+[tool.vercel]
+framework = "fastapi"
+entrypoint = "main:app"
+
+[tool.vercel.fastapi.static]
+cdn = false
+
 [tool.setuptools.packages.find]
 include = ["app*"]

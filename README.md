@@ -2,6 +2,90 @@
 
 SecureShare is a student file-sharing and collaboration workspace built with FastAPI, Jinja2, MongoDB and Cloudinary. It supports verified student accounts, encrypted file uploads, private sharing, secure links, class groups, activity history, notifications and administrative oversight. There is no chat or messaging feature.
 
+## Project walkthrough
+
+This section explains the technologies and engineering ideas used in SecureShare, then follows the order a developer can use to set up, run, and understand the application. It documents the implementation in this repository; it is not a claim that every coding task was completed in this exact historical order.
+
+### Technologies used
+
+| Area | Technology | How it is used |
+| --- | --- | --- |
+| Language/runtime | Python 3.13+ | Application code and command-line setup scripts. |
+| Web framework | FastAPI with Starlette | Async HTTP routes, request handling, middleware, sessions, static files, and lifecycle startup/shutdown. |
+| Server | Uvicorn | Runs the ASGI application locally and in deployment. |
+| HTML rendering | Jinja2 | Server-rendered pages and reusable template components. |
+| Forms and validation | Python multipart support, Pydantic Settings, project validators | Handles uploads/forms and validates application configuration and user input. |
+| Database | MongoDB with PyMongo `AsyncMongoClient` | Persistent document records, indexes, conditional updates, and replica-set transactions. |
+| Local/test database | In-memory async document adapter | Enables disposable local previews and isolated tests without Atlas. Data is lost when the process stops. |
+| File storage | Cloudinary authenticated raw assets | Stores encrypted upload payloads; application routes proxy downloads after authorization. Local demos can use encrypted files under `var/blobs`. |
+| Cryptography | `cryptography` AES-GCM | Encrypts file bytes before storage and authenticates them when decrypted. |
+| Password hashing | `argon2-cffi` | Hashes account passwords and optional share-link passwords. |
+| Email | Python SMTP with STARTTLS | Delivers email verification, password reset, and selected account/share notifications. |
+| Browser code | HTML, CSS, vanilla JavaScript | Responsive interface, theme and interaction behavior, upload progress, sharing, notifications, groups, and dashboard enhancements. |
+| Tests | pytest and pytest-asyncio | Exercises authentication, permissions, sharing, uploads/downloads, groups, notifications, admin, OTP, and transaction behavior. |
+| Environment/dependencies | `uv`, `pyproject.toml`, `uv.lock` | Reproducible Python environment and locked dependency versions. |
+
+### Concepts and methods used
+
+- **Layered application structure:** route modules handle HTTP requests, services implement application operations, core modules hold security and permission rules, integrations wrap external systems, and templates render the interface.
+- **Dependency and lifecycle management:** FastAPI's lifespan initializes settings, database, storage, encryption, and email services at startup, then closes clients during shutdown. Services are attached to `app.state` for request handlers.
+- **Document-oriented persistence:** user, file, share, group, request, notification, OTP, download, and activity records are stored as MongoDB documents behind a small async database interface.
+- **Authentication and authorization:** signed sessions identify a user; route dependencies require login or CSRF validation; service and route checks enforce ownership, share status, group membership, and administrative roles.
+- **Defense in depth:** input checks, upload limits and quotas, route-level rate limits, email verification, secure cookies, CSRF tokens, security headers, and server-side file access checks cover different points in a request.
+- **Password and token handling:** passwords use Argon2 hashes. One-time codes and share-link tokens are represented by hashes in persistent records, and signed session/token secrets come from configuration.
+- **Authenticated encryption:** AES-256-GCM uses a random nonce per upload and the file ID as associated data. GCM detects ciphertext modification; the nonce and encrypted bytes are stored together. The encryption key must remain available to decrypt existing files.
+- **Transactions and saga compensation:** database changes that belong together are grouped in a transaction where MongoDB supports it. Uploads first write the encrypted blob, then persist metadata/quota/audit changes; a compensation action deletes the blob if persistence fails.
+- **Atomic conditional updates:** a download-limit condition is checked as part of the update so concurrent requests cannot all consume the last available download.
+- **Service adapters:** database and storage interfaces allow persistent services in configured deployments and substitutes for local previews/tests.
+- **Auditability and notifications:** important events are recorded in activity logs; in-app notifications and optional email communicate events to users.
+- **Server-rendered progressive interface:** Jinja renders complete pages, with CSS and small JavaScript files adding responsive layout and interactions.
+
+### Build and run, step by step
+
+1. **Install prerequisites.** Use Python 3.13 or newer and install `uv`. For a persistent deployment, create MongoDB Atlas, Cloudinary, and SMTP credentials. A local preview can use the in-memory database and local blob storage, but it is temporary.
+2. **Create the environment.** From the repository root, run `uv sync` to create the virtual environment and install the dependencies recorded in `uv.lock`.
+3. **Create configuration.** Copy `.env.example` to `.env`. For persistent development, set the MongoDB URI/database, Cloudinary credentials, SMTP values, and unique session, token, and encryption secrets. Keep `.env` private and out of source control.
+4. **Choose local preview or persistent mode.** For a disposable preview, set `LOCAL_DEMO_MODE=true`; the database records are memory-only and uploaded encrypted blobs use local storage. For normal development with persistence, leave demo mode off and configure `MONGODB_URI`. Production requires persistent MongoDB, Cloudinary, SMTP, and explicit secrets.
+5. **Start the app.** Run `uv run uvicorn app.main:app --reload`, then open <http://localhost:8000>. Startup validates required production configuration, connects to MongoDB when configured, and ensures indexes.
+6. **Create an account.** Register with an email address, receive the six-digit verification code through SMTP, and verify it before signing in. In-app account creation grants the student role; use the admin script for the first administrator.
+7. **Upload and organize files.** The upload route validates the file name, size, group permission, and storage quota; encrypts its bytes; writes the encrypted object to storage; then records file metadata and usage. The app supports personal files, group repositories, and file requests.
+8. **Share securely.** Create a recipient share or link. The app checks permissions on the server for each download. Link shares can have a password, expiry, and download limit, and can be revoked.
+9. **Use administration and maintenance scripts.** `uv run python scripts/create_admin.py` creates an administrator in configured MongoDB. `uv run python scripts/create_indexes.py` explicitly creates database indexes. App startup also ensures them.
+10. **Run the test suite.** Use `uv run pytest`. Tests use the isolated in-memory database and local encrypted blob storage; SMTP is stubbed, so external services are not required.
+
+### Request flow: encrypted file upload
+
+1. The browser submits a multipart form to the authenticated upload route, including a CSRF token.
+2. The route checks login, upload permission, filename, maximum size, and remaining account quota.
+3. The application encrypts the file bytes with AES-256-GCM and a fresh nonce, binding the ciphertext to the generated file ID.
+4. Storage saves only the encrypted payload and returns a storage key.
+5. A database transaction records file metadata, updates the owner's used storage, and records the activity event.
+6. If the metadata transaction fails, the saga's compensation step deletes the newly written blob.
+
+### Request flow: file download
+
+1. The browser requests a download through SecureShare; it does not receive a permanent public Cloudinary asset URL.
+2. The server checks that the requester owns the file or has valid recipient, group, or link access.
+3. It checks that the share is active and that any password, expiry, and download-limit rules pass.
+4. The server fetches the encrypted blob, authenticates and decrypts it, records download history, and returns the bytes with a safe attachment filename.
+
+### Where to find things
+
+| Path | Responsibility |
+| --- | --- |
+| `app/main.py` | FastAPI application, startup/shutdown, middleware, router registration, and error handlers. |
+| `app/routes/` | HTTP endpoints grouped by feature. |
+| `app/services/` | Reusable authentication, file, sharing, group, notification, activity, and admin operations. |
+| `app/core/` | Encryption, password/token security, permissions, errors, and rate limiting. |
+| `app/transactions/` | Upload/share/download/revocation transaction helpers and saga coordination. |
+| `app/integrations/` | MongoDB, Cloudinary/local blob, and SMTP adapters. |
+| `app/models/` and `app/schemas/` | Domain record definitions and request/data validation schemas. |
+| `app/middleware/` | Security headers and request logging/authentication middleware. |
+| `templates/` | Jinja page templates and reusable components. |
+| `static/css/` and `static/js/` | Stylesheets and browser-side interactions. |
+| `scripts/` | Admin creation, index creation, and seed helper scripts. |
+| `tests/` | Automated behavior and security regression tests. |
+
 ## Features
 
 - Argon2 password hashing, six-digit email verification codes, password recovery, secure signed sessions and CSRF checks.
@@ -77,3 +161,11 @@ Tests use the isolated in-memory adapter and local encrypted blob storage; they 
 ## Deployment guidance
 
 Run multiple Uvicorn worker processes behind a TLS reverse proxy. Set `APP_ENV=production`, all secrets, MongoDB Atlas, Cloudinary and SMTP before starting. Use Atlas replica-set transactions, restrict the database user to the application database, limit Cloudinary API permissions, keep secret backups separate from file backups, and monitor transaction errors, failed logins and the cleanup queue. Do not use the in-memory database or local blob mode for production.
+
+### Vercel
+
+Import the repository with its root directory set to the folder containing `main.py` and `pyproject.toml`. Select the **FastAPI** framework preset; Vercel discovers the ASGI app exported by root `main.py`. The project configuration also sets the FastAPI entrypoint and keeps the mounted static files in the function so the app's security middleware and `/static/...` URLs continue to work.
+
+Before deploying, add these environment variables in Vercel Project Settings for each environment: `APP_ENV=production`, `LOCAL_DEMO_MODE=false`, `MONGODB_URI`, `MONGODB_DATABASE`, `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_FROM_EMAIL`, `SESSION_SECRET`, `JWT_SECRET`, and `ENCRYPTION_KEY`. Use a real MongoDB Atlas URI and Cloudinary credentials. Vercel sets `VERCEL=1` for deployed functions, so the app applies its production checks even if `APP_ENV` was accidentally omitted; without Cloudinary credentials it will refuse to start instead of saving uploads to temporary local disk. Confirm the startup log says `File storage configured: Cloudinary` after deployment. Changes to Vercel environment variables require a new deployment.
+
+The local file system on Vercel is temporary. Persistent uploads must use Cloudinary, and records must use MongoDB Atlas; do not enable `LOCAL_DEMO_MODE` in deployment. Vercel's FastAPI runtime is one serverless function, so the process-local rate limiter is not shared across instances. Configure Vercel's routing/security controls or a shared rate limiter if login throttling must be consistent across instances.

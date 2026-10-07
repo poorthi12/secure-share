@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hmac
 import secrets
+from pathlib import Path
 from typing import Any
 
 from fastapi import Depends, HTTPException, Request
@@ -23,7 +24,8 @@ def _base_context(request: Request) -> dict[str, Any]:
     }
 
 
-templates = Jinja2Templates(directory="templates", context_processors=[_base_context])
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+templates = Jinja2Templates(directory=PROJECT_ROOT / "templates", context_processors=[_base_context])
 
 
 def render(request: Request, template: str, context: dict[str, Any] | None = None, *, status_code: int = 200):
@@ -74,17 +76,19 @@ async def require_user(request: Request):
         raise HTTPException(status_code=303, detail="Sign in required", headers={"Location": "/login"})
     if not user.get("email_verified"):
         raise HTTPException(status_code=303, detail="Verify your email", headers={"Location": "/verify-otp?email=" + user.get("email", "")})
-    request.session["unread_count"] = await request.app.state.db.count("notifications", {"user_id": user["id"], "read_at": None})
-    preview = await request.app.state.db.find_many("notifications", {"user_id": user["id"]}, sort=[("created_at", -1)], limit=4)
-    request.session["notification_preview"] = [
-        {
-            "title": item["title"],
-            "message": item["message"],
-            "target_url": item.get("target_url", "/notifications"),
-            "read_at": item["read_at"].isoformat() if item.get("read_at") else None,
-        }
-        for item in preview
-    ]
+    if request.url.path != "/notifications/updates":
+        request.session["unread_count"] = await request.app.state.db.count("notifications", {"user_id": user["id"], "read_at": None})
+        preview = await request.app.state.db.find_many("notifications", {"user_id": user["id"]}, sort=[("created_at", -1)], limit=4)
+        request.session["notification_preview"] = [
+            {
+                "id": item["id"],
+                "title": item["title"],
+                "message": item["message"],
+                "target_url": item.get("target_url", "/notifications"),
+                "read_at": item["read_at"].isoformat() if item.get("read_at") else None,
+            }
+            for item in preview
+        ]
     return user
 
 

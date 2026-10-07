@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="csrf-token" content="{{ csrf_token }}">
+  {% if current_user %}<meta name="notification-latest-id" content="{{ notification_preview[0].id if notification_preview else '' }}">{% endif %}
   <meta name="theme-color" content="#F5F5F5">
   <title>{% block title %}SecureShare{% endblock %} · SecureShare</title>
   <link rel="icon" type="image/svg+xml" href="/static/images/logo.svg">

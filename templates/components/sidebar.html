@@ -10,6 +10,7 @@
     <a class="nav-item {% if request.url.path.startswith('/my-files') or request.url.path.startswith('/files') %}active{% endif %}" href="/my-files"><span class="nav-icon">▤</span><span>My files</span></a>
     <a class="nav-item {% if request.url.path == '/sharing/shared-with-me' %}active{% endif %}" href="/sharing/shared-with-me"><span class="nav-icon">⇩</span><span>Shared with me</span></a>
     <a class="nav-item {% if request.url.path == '/sharing/shared-by-me' %}active{% endif %}" href="/sharing/shared-by-me"><span class="nav-icon">⇧</span><span>Shared by me</span></a>
+    <a class="nav-item {% if request.url.path.startswith('/file-requests') %}active{% endif %}" href="/file-requests"><span class="nav-icon" aria-hidden="true">&#x2709;</span><span>File requests</span></a>
     <a class="nav-item {% if request.url.path.startswith('/groups') %}active{% endif %}" href="/groups"><span class="nav-icon">◉</span><span>Groups</span></a>
     <a class="nav-item {% if request.url.path.startswith('/notifications') %}active{% endif %}" href="/notifications"><span class="nav-icon">♧</span><span>Notifications</span>{% if unread_count|default(0) %}<span class="nav-badge">{{ unread_count }}</span>{% endif %}</a>
   </nav>

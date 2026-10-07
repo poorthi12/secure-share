@@ -11,16 +11,26 @@
   <a class="button button-primary" href="/sharing/create">&#x2197; Share a file</a>
 </section>
 
-{% if new_share_link %}
+{% if new_share_links or new_share_link %}
 <section class="new-link-callout">
   <span class="callout-check" aria-hidden="true">&#x2713;</span>
   <div>
-    <b>Your secure link is ready</b>
-    <p>Copy and share this link now. We will not show it again.</p>
-    <div class="copy-link-row">
-      <input readonly value="{{ new_share_link }}" aria-label="New secure link" data-copy-source>
-      <button class="button button-primary button-small" type="button" data-copy>Copy link</button>
-    </div>
+    <b>{% if new_share_links|length > 1 %}Your secure links are ready{% else %}Your secure link is ready{% endif %}</b>
+    <p>Copy and share these links now. We will not show them again.</p>
+    {% if new_share_links %}
+      {% for link in new_share_links %}
+      <small>{{ link.filename }}</small>
+      <div class="copy-link-row">
+        <input readonly value="{{ link.url }}" aria-label="Secure link for {{ link.filename }}" data-copy-source>
+        <button class="button button-primary button-small" type="button" data-copy>Copy link</button>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="copy-link-row">
+        <input readonly value="{{ new_share_link }}" aria-label="New secure link" data-copy-source>
+        <button class="button button-primary button-small" type="button" data-copy>Copy link</button>
+      </div>
+    {% endif %}
   </div>
 </section>
 {% endif %}

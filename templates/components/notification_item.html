@@ -1,11 +1,11 @@
-<article class="notification-item {% if not item.read_at %}unread{% endif %}">
+<article class="notification-item {% if not item.read_at %}unread{% endif %}" data-notification-id="{{ item.id }}">
   <span class="notification-symbol" aria-hidden="true">
-    {% if item.kind == 'download' %}&#x2193;{% elif item.kind == 'group' %}&#x25C9;{% else %}&#x25C7;{% endif %}
+    {% if item.kind == 'download' %}&#x2193;{% elif item.kind == 'group' %}&#x25C9;{% elif item.kind == 'file_request' %}&#x2709;{% else %}&#x25C7;{% endif %}
   </span>
   <div class="notification-copy">
     <strong>{{ item.title }}</strong>
     <p>{{ item.message }}</p>
-    {% if item.target_url %}<a class="button button-secondary button-small" href="{{ item.target_url }}">{% if item.kind == 'share' %}View and download{% else %}Open update{% endif %} &#x2192;</a>{% endif %}
+    {% if item.target_url %}<a class="button button-secondary button-small" href="{{ item.target_url }}">{% if item.kind == 'share' %}View and download{% elif item.kind == 'file_request' %}Review request{% else %}Open update{% endif %} &#x2192;</a>{% endif %}
     <time>{{ item.created_at.strftime('%b %d, %Y · %I:%M %p') if item.created_at else '' }}</time>
   </div>
   {% if not item.read_at %}

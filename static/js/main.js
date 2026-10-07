@@ -84,10 +84,19 @@
   const input = $('[data-file-input]');
   const zone = $('[data-drop-zone]');
   const fileName = $('[data-file-name]');
-  const updateFile = (file) => {
-    if (fileName && file) fileName.textContent = `${file.name} · ${(file.size / 1048576).toFixed(2)} MB`;
+  const filePrompt = $('[data-file-prompt]');
+  const dropIcon = $('.drop-icon', zone || document);
+  const updateFiles = (fileList) => {
+    const files = [...(fileList || [])];
+    if (!files.length) return;
+    zone?.classList.add('has-file');
+    if (filePrompt) filePrompt.textContent = files.length === 1 ? 'File ready to upload' : `${files.length} files ready to upload`;
+    if (dropIcon) dropIcon.textContent = '\u2713';
+    const totalBytes = files.reduce((total, file) => total + file.size, 0);
+    const names = files.length <= 2 ? files.map((file) => file.name).join(', ') : `${files.slice(0, 2).map((file) => file.name).join(', ')} + ${files.length - 2} more`;
+    if (fileName) fileName.textContent = `${names} \u00B7 ${(totalBytes / 1048576).toFixed(2)} MB total`;
   };
-  input?.addEventListener('change', () => updateFile(input.files?.[0]));
+  input?.addEventListener('change', () => updateFiles(input.files));
   ['dragenter', 'dragover'].forEach((name) => zone?.addEventListener(name, (event) => {
     event.preventDefault();
     zone.classList.add('dragging');
@@ -100,9 +109,9 @@
     const files = event.dataTransfer?.files;
     if (files?.length && input) {
       const transfer = new DataTransfer();
-      transfer.items.add(files[0]);
+      [...files].forEach((file) => transfer.items.add(file));
       input.files = transfer.files;
-      updateFile(files[0]);
+      updateFiles(input.files);
     }
   });
 
@@ -177,7 +186,7 @@
   }));
 
   $$('[data-copy]').forEach((button) => button.addEventListener('click', async () => {
-    const field = $('[data-copy-source]');
+    const field = $('[data-copy-source]', button.closest('.copy-link-row') || document);
     if (!field) return;
     let copied = false;
     try {
@@ -197,4 +206,196 @@
 
   // Keep the controls usable if a browser blocks optional enhancements.
   $$('[data-copy-source]').forEach((field) => field.addEventListener('click', () => field.select()));
+
+  const latestNotificationMeta = $('meta[name="notification-latest-id"]');
+  if (latestNotificationMeta) {
+    let latestNotificationId = latestNotificationMeta.content;
+    let shareRefreshPending = false;
+    let pollPending = false;
+    const refreshBadges = (unreadCount) => {
+      const sidebarLink = $('.sidebar a[href="/notifications"]');
+      let badge = sidebarLink && $('.nav-badge', sidebarLink);
+      if (sidebarLink && unreadCount > 0) {
+        if (!badge) {
+          badge = document.createElement('span');
+          badge.className = 'nav-badge';
+          sidebarLink.append(badge);
+        }
+        badge.textContent = unreadCount > 99 ? '99+' : String(unreadCount);
+      } else {
+        badge?.remove();
+      }
+      const notificationButton = $('.top-action-popover > summary');
+      let dot = notificationButton && $('.notification-dot', notificationButton);
+      if (notificationButton && unreadCount > 0 && !dot) {
+        dot = document.createElement('i');
+        dot.className = 'notification-dot';
+        notificationButton.append(dot);
+      } else if (unreadCount === 0) {
+        dot?.remove();
+      }
+      const count = $('[data-notification-count]');
+      if (count) {
+        count.hidden = unreadCount === 0;
+        count.textContent = `${unreadCount} new`;
+      }
+      const heading = location.pathname === '/notifications' ? $('.page-heading h1') : null;
+      let pageCount = $('[data-notification-page-count]') || (heading && $('.count-pill', heading));
+      if (heading && unreadCount > 0 && !pageCount) {
+        pageCount = document.createElement('span');
+        pageCount.className = 'count-pill';
+        pageCount.dataset.notificationPageCount = '';
+        heading.append(' ', pageCount);
+      }
+      if (pageCount) {
+        pageCount.hidden = unreadCount === 0;
+        pageCount.textContent = `${unreadCount} new`;
+      }
+      const markAll = $('[data-mark-all-read]');
+      if (markAll) markAll.hidden = unreadCount === 0;
+    };
+    const renderPopover = (items) => {
+      const preview = $('[data-notification-preview]');
+      if (!preview) return;
+      preview.replaceChildren();
+      if (!items.length) {
+        const empty = document.createElement('p');
+        empty.textContent = "You're all caught up.";
+        preview.append(empty);
+        return;
+      }
+      items.slice(0, 4).forEach((item) => {
+        const link = document.createElement('a');
+        link.className = `popover-notification${item.read_at ? '' : ' unread'}`;
+        link.href = item.target_url || '/notifications';
+        link.dataset.notificationId = item.id;
+        const title = document.createElement('b');
+        title.textContent = item.title || 'Update for you';
+        const message = document.createElement('small');
+        message.textContent = item.message || '';
+        link.append(title, message);
+        preview.append(link);
+      });
+    };
+    const showNotification = (item) => {
+      const region = $('#toast-region');
+      if (!region) return;
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.setAttribute('role', 'status');
+      const copy = document.createElement('span');
+      copy.textContent = `${item.title}: ${item.message}`;
+      const link = document.createElement('a');
+      link.className = 'text-link';
+      link.href = item.target_url || '/notifications';
+      link.textContent = item.kind === 'share' ? 'View file' : item.kind === 'file_request' ? 'Review request' : 'Open';
+      toast.append(copy, document.createTextNode(' '), link);
+      region.append(toast);
+      setTimeout(() => toast.remove(), 9000);
+    };
+    const createNotificationElement = (item) => {
+      const article = document.createElement('article');
+      article.className = `notification-item${item.read_at ? '' : ' unread'}`;
+      article.dataset.notificationId = item.id;
+      const icon = document.createElement('span');
+      icon.className = 'notification-symbol';
+      icon.setAttribute('aria-hidden', 'true');
+      icon.textContent = item.kind === 'download' ? '\u2193' : item.kind === 'group' ? '\u25C9' : '\u25C7';
+      const copy = document.createElement('div');
+      copy.className = 'notification-copy';
+      const title = document.createElement('strong');
+      title.textContent = item.title || 'Update for you';
+      const message = document.createElement('p');
+      message.textContent = item.message || '';
+      copy.append(title, message);
+      if (item.target_url) {
+        const link = document.createElement('a');
+        link.className = 'button button-secondary button-small';
+        link.href = item.target_url;
+        link.textContent = item.kind === 'share' ? 'View and download' : item.kind === 'file_request' ? 'Review request' : 'Open update';
+        copy.append(link);
+      }
+      const time = document.createElement('time');
+      time.textContent = item.created_at ? new Date(item.created_at).toLocaleString() : '';
+      copy.append(time);
+      article.append(icon, copy);
+      if (!item.read_at) {
+        const form = document.createElement('form');
+        form.method = 'post';
+        form.action = `/notifications/${encodeURIComponent(item.id)}/read`;
+        const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
+        const token = document.createElement('input');
+        token.type = 'hidden';
+        token.name = '_csrf';
+        token.value = csrf;
+        const button = document.createElement('button');
+        button.className = 'quiet-button';
+        button.type = 'submit';
+        button.textContent = 'Mark read';
+        form.append(token, button);
+        article.append(form);
+      }
+      return article;
+    };
+    const prependNotification = (item) => {
+      const list = $('[data-notification-list]');
+      if (!list || list.querySelector(`[data-notification-id="${CSS.escape(item.id)}"]`)) return;
+      $('.empty-state', list)?.remove();
+      list.prepend(createNotificationElement(item));
+    };
+    const checkForUpdates = async () => {
+      if (document.visibilityState !== 'visible' || pollPending) return;
+      pollPending = true;
+      try {
+        const response = await fetch('/notifications/updates', { credentials: 'same-origin', cache: 'no-store' });
+        if (!response.ok) return;
+        const updates = await response.json();
+        const items = Array.isArray(updates.notifications) ? updates.notifications : updates.latest ? [updates.latest] : [];
+        refreshBadges(Number(updates.unread_count || 0));
+        renderPopover(items);
+        const unseen = [];
+        if (latestNotificationId) {
+          for (const item of items) {
+            if (item.id === latestNotificationId) break;
+            unseen.push(item);
+          }
+        } else {
+          unseen.push(...items);
+        }
+        if (items.length && items[0].id !== latestNotificationId) {
+          latestNotificationId = items[0].id;
+          latestNotificationMeta.content = latestNotificationId;
+          unseen.reverse().forEach((item) => {
+            showNotification(item);
+            prependNotification(item);
+          });
+        }
+      } catch {} finally {
+        pollPending = false;
+      }
+    };
+    void checkForUpdates();
+    setInterval(checkForUpdates, 2500);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') void checkForUpdates();
+    });
+    window.addEventListener('focus', () => void checkForUpdates());
+
+    const sharedFilesPanel = $('[data-shared-signature]');
+    if (sharedFilesPanel) {
+      const checkSharedFiles = async () => {
+        if (document.visibilityState !== 'visible' || shareRefreshPending) return;
+        try {
+          const response = await fetch('/sharing/updates', { credentials: 'same-origin', cache: 'no-store' });
+          if (!response.ok) return;
+          const updates = await response.json();
+          if (updates.share_signature !== sharedFilesPanel.dataset.sharedSignature) {
+            shareRefreshPending = true;
+            location.reload();
+          }
+        } catch {}
+      };
+      setInterval(checkSharedFiles, 20000);
+    }
+  }
 })();

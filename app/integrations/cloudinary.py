@@ -24,7 +24,10 @@ class BlobStorage:
             and settings.cloudinary_api_secret
         )
         self.http = httpx.AsyncClient(timeout=45, follow_redirects=True)
-        self.settings.local_blob_dir.mkdir(parents=True, exist_ok=True)
+        if not self.cloud_enabled:
+            self.settings.local_blob_dir.mkdir(parents=True, exist_ok=True)
+        provider = "Cloudinary" if self.cloud_enabled else "local demo/development storage"
+        logger.info("File storage configured: %s", provider)
         if self.cloud_enabled:
             import cloudinary
 

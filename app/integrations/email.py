@@ -5,6 +5,7 @@ import html
 import logging
 import smtplib
 from email.message import EmailMessage
+from email.utils import parseaddr
 
 from app.config import Settings
 
@@ -17,7 +18,14 @@ class EmailService:
 
     @property
     def is_configured(self) -> bool:
-        return bool(self.settings.smtp_host and self.settings.smtp_from_email)
+        return bool(self.settings.smtp_host and self._sender_address())
+
+    def _sender_address(self) -> str:
+        configured = self.settings.smtp_from_email.strip()
+        if configured:
+            return configured
+        username = self.settings.smtp_username.strip()
+        return username if parseaddr(username)[1] else ""
 
     async def send(self, recipient: str, subject: str, title: str, message: str, *, action_url: str | None = None) -> bool:
         if not self.is_configured:
@@ -25,7 +33,7 @@ class EmailService:
             return False
         msg = EmailMessage()
         msg["Subject"] = subject
-        msg["From"] = self.settings.smtp_from_email
+        msg["From"] = self._sender_address()
         msg["To"] = recipient
         safe_title = html.escape(title)
         safe_message = html.escape(message).replace("\n", "<br>")

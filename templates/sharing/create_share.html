@@ -1,12 +1,12 @@
 {% extends 'base.html' %}
-{% block title %}Share a file{% endblock %}
+{% block title %}Share files{% endblock %}
 
 {% block content %}
 <section class="page-heading">
   <div>
     <span class="eyebrow">SHARE WITH CONFIDENCE</span>
-    <h1>Create a secure share</h1>
-    <p>Choose who can access your file and how long access should last.</p>
+    <h1>Share files securely</h1>
+    <p>Choose one or more files, who can access them, and how long access should last.</p>
   </div>
 </section>
 
@@ -21,23 +21,23 @@
   <section class="panel share-form-panel">
     <form method="post" action="/shares" class="stack-form" data-loading-form>
       <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-      <label>Choose a file
-        <select name="file_id" required {% if not files %}disabled{% endif %}>
-          <option value="">Select a file</option>
+      <label>Choose files
+        <select name="file_ids" class="bulk-select" multiple size="6" required {% if not files %}disabled{% endif %}>
           {% for file in files %}
-          <option value="{{ file.id }}" {% if selected_file and selected_file.id == file.id %}selected{% endif %}>{{ file.filename }}</option>
+          <option value="{{ file.id }}" {% if selected_file and selected_file.id == file.id %}selected{% endif %}>{{ file.filename }} · {{ file.size|filesizeformat }}</option>
           {% endfor %}
         </select>
+        <small class="field-hint">Select up to 20 files with Ctrl on Windows or Cmd on Mac.</small>
       </label>
 
       <div class="form-section-heading">
         <span class="step-badge">01</span>
-        <div><b>Who should have access?</b><small>Choose one destination. You can select a student, a group, or create a link.</small></div>
+        <div><b>Who should have access?</b><small>Share selected files with accounts, a group, or create a link for each file.</small></div>
       </div>
       <div class="share-mode-grid" role="radiogroup" aria-label="Share destination">
         <label class="share-mode-option">
           <input type="radio" name="share_type" value="student" {% if students %}checked{% else %}disabled{% endif %} required>
-          <span><b>Student</b><small>Share with one member</small></span>
+          <span><b>Accounts</b><small>Share with one or more members</small></span>
         </label>
         <label class="share-mode-option">
           <input type="radio" name="share_type" value="group" {% if not students and groups %}checked{% endif %} {% if not groups %}disabled{% endif %} required>
@@ -45,17 +45,17 @@
         </label>
         <label class="share-mode-option">
           <input type="radio" name="share_type" value="link" {% if not students and not groups %}checked{% endif %} required>
-          <span><b>Secure link</b><small>Create a copyable link</small></span>
+          <span><b>Secure links</b><small>Create a link for each file</small></span>
         </label>
       </div>
 
       <div class="share-mode-fields" data-share-fields="student">
-        <label>Select a student
-          <select name="recipient_id" data-share-required>
-            <option value="">Choose a student</option>
-            {% for student in students %}<option value="{{ student.id }}">{{ student.name }} | {{ student.email }}</option>{% endfor %}
+        <label>Select accounts
+          <select name="recipient_ids" class="bulk-select" multiple size="6" data-share-required>
+            {% for student in students %}<option value="{{ student.id }}" {% if selected_recipient and selected_recipient.id == student.id %}selected{% endif %}>{{ student.name }} | {{ student.email }}</option>{% endfor %}
           </select>
-          {% if not students %}<small class="field-hint">No other verified students are available yet.</small>{% endif %}
+          <small class="field-hint">Select up to 20 with Ctrl on Windows or Cmd on Mac.</small>
+          {% if not students %}<small class="field-hint">No other verified accounts are available yet.</small>{% endif %}
         </label>
       </div>
 
@@ -69,8 +69,8 @@
       </div>
 
       <div class="share-mode-fields share-link-note" data-share-fields="link">
-        <b>Copy the link after you create it.</b>
-        <small>It will appear on the next page. Keep it private and share it only with the people you trust.</small>
+        <b>Copy each link after you create it.</b>
+        <small>A separate link will be created for every selected file. Keep the links private.</small>
       </div>
 
       <div class="form-section-heading">
@@ -98,7 +98,7 @@
         </label>
       </div>
       <div class="share-encryption-note"><span aria-hidden="true">&#x25C7;</span><span><b>Encrypted at rest</b><small>The file remains encrypted; download checks happen before any content is served.</small></span></div>
-      <button class="button button-primary button-full" type="submit" {% if not files %}disabled aria-disabled="true"{% endif %}>Create secure share <span class="button-arrow" aria-hidden="true">&#x2192;</span></button>
+      <button class="button button-primary button-full" type="submit" {% if not files %}disabled aria-disabled="true"{% endif %}>Create shares <span class="button-arrow" aria-hidden="true">&#x2192;</span></button>
     </form>
   </section>
   <aside class="share-aside">

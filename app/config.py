@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     smtp_port: int = 587
     smtp_username: str = ""
     smtp_password: str = ""
-    smtp_from_email: str = "SecureShare <no-reply@secureshare.local>"
+    smtp_from_email: str = ""
     jwt_secret: str = ""
     session_secret: str = ""
     encryption_key: str = ""
@@ -57,7 +57,11 @@ class Settings(BaseSettings):
 
     @property
     def is_production(self) -> bool:
-        return self.app_env.lower() == "production"
+        # Vercel deployments must use production secrets and persistent services
+        # even when APP_ENV was accidentally left at its development default.
+        return self.app_env.lower() == "production" or (
+            os.getenv("VERCEL", "").strip().lower() in {"1", "true"}
+        )
 
     @property
     def cookie_secure(self) -> bool:
@@ -104,4 +108,3 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
-
